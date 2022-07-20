@@ -36,15 +36,41 @@ const createUser = async (req, res = response) => {
   }
 };
 
-const login = (req, res = response) => {
+const login = async (req, res = response) => {
   const { email, password } = req.body;
 
-  res.json({
-    ok: true,
-    msg: "Login",
-    email,
-    password,
-  });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        ok: false,
+        msg: "Email not found",
+      });
+    }
+
+    //Confirm passwords
+    const isValidPassword = bcryptjs.compareSync(password, user.password);
+    if (!isValidPassword) {
+      return res.status(400).json({
+        ok: false,
+        msg: "Password incorrect",
+      });
+    }
+
+    //Generate JWT
+
+    res.json({
+      ok: true,
+      uid: user.id,
+      name: user.name,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      msg: "Error",
+    });
+  }
 };
 
 const revalidateJwt = (req, res = response) => {
